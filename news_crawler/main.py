@@ -408,7 +408,8 @@ class NewsCollectorApp:
                         if unchecked_news:
                             for news in unchecked_news:
                                 # 메시지 생성
-                                formatted_news = f"🗞 {news['title']}\n{news['url']}"
+                                # formatted_news = f"🗞 {news['title']}\n{news['url']}"
+                                formatted_news = f"{news['title']}\n{news['url']}"
                                 self.add_news_to_list(formatted_news)
 
                 except Exception as e:
