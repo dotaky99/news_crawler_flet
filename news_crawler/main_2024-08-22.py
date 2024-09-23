@@ -375,41 +375,25 @@ class NewsCollectorApp:
                     inner_html = urlopen(inner_url)
                     innerObject = bs(inner_html, 'html.parser', from_encoding='utf-8')
 
-                    # recent_news = innerObject.select('#newsct > div.section_latest > div > div.section_latest_article._CONTENT_LIST._PERSIST_META > div:nth-child(1) > ul')
-                    recent_news = innerObject.select('#newsct > div.section_latest > div > div.section_latest_article._CONTENT_LIST._PERSIST_META > div:nth-child(1) > ul > li > div > div > div.sa_text')
+                    recent_news = innerObject.select('#newsct > div.section_latest > div > div.section_latest_article._CONTENT_LIST._PERSIST_META > div:nth-child(1) > ul')
 
-                    # links = [{'href': a['href'], 'title': a.get_text(strip=True)} 
-                    #          for div in recent_news 
-                    #          for a in div.find_all('a') if a.get_text(strip=True)]
-                    
-                    for item in recent_news:
-                        # 1. a 태그의 href 값 추출
-                        a_tag = item.find('a', class_='sa_text_title')
-                        href_value = a_tag['href'] if a_tag else None
+                    links = [{'href': a['href'], 'title': a.get_text(strip=True)} 
+                             for div in recent_news 
+                             for a in div.find_all('a') if a.get_text(strip=True)]
 
-                        # 2. strong 태그의 텍스트 값 추출 = 제목 추출
-                        strong_tag = a_tag.find('strong', class_='sa_text_strong') if a_tag else None
-                        strong_text = strong_tag.get_text(strip=True) if strong_tag else None
+                    keywords_match_news = [link for link in links if any(keyword in link['title'] for keyword in keywords)]
 
-                        # strong_text에 keywords 중 하나라도 포함되어 있으면 출력
-                        matched_news = []
-                        if strong_text and any(keyword in strong_text for keyword in keywords):
-                            # 매칭된 뉴스 정보를 딕셔너리로 저장
-                            matched_news.append({
-                                'href': href_value,
-                                'title': strong_text
-                            })
+                    if keywords_match_news:
+                        print(keywords_match_news)
+                        save_news_to_db(keywords_match_news)
 
-                        if matched_news:
-                            save_news_to_db(matched_news)
+                    unchecked_news = get_unchecked_news()
 
-                        unchecked_news = get_unchecked_news()
-
-                        if unchecked_news:
-                            for news in unchecked_news:
-                                # 메시지 생성
-                                formatted_news = f"🗞 {news['title']}\n{news['url']}"
-                                self.add_news_to_list(formatted_news)
+                    if unchecked_news:
+                        for news in unchecked_news:
+                            # 메시지 생성
+                            formatted_news = f"🗞 {news['title']}\n{news['url']}"
+                            self.add_news_to_list(formatted_news)
 
                 except Exception as e:
                     error_message = f"Error processing news from '{tab_name}': {str(e)}"
@@ -468,24 +452,6 @@ class NewsCollectorApp:
         )
         self.page.update()
         self.change_appbar_color(ft.colors.RED)
-
-        # 전체 창 배경색을 빨간색으로 변경
-        self.change_page_color(ft.colors.RED)
-
-    def change_page_color(self, color, duration=3):
-        """페이지의 배경색을 일시적으로 변경한 후 원래 색상으로 복원"""
-        self.page.bgcolor = color  # 페이지의 배경색을 빨간색으로 변경
-        self.page.update()
-        # 3초 후 색상 복원
-        threading.Timer(duration, self.reset_page_color).start()
-
-    def reset_page_color(self):
-        """페이지의 배경색을 기본 색상으로 복원"""
-        if self.page.theme_mode == ft.ThemeMode.LIGHT:
-            self.page.bgcolor = ft.colors.ON_SECONDARY  # 라이트 모드 기본 배경색
-        else:
-            self.page.bgcolor = ft.colors.BLACK  # 다크 모드 기본 배경색
-        self.page.update()
 
     def create_containers(self):
         # 메시지를 표시할 Text 컨트롤 생성
